@@ -1,0 +1,1343 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Share trading P&L calculator — Smart Business Accounting</title>
+  <meta name="description" content="Free share trading profit and loss calculator. FIFO cost base, CGT discount check, and tax estimate. From SBA — IPA-certified Australian accountants.">
+  <link rel="icon" href="SBA Design System/assets/favicon.ico">
+
+  <!-- Design system fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,700&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Chart.js for the P&L visualisation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+  <style>
+    /* ── Design tokens (mirrors SBA Design System / colors_and_type.css) ── */
+    :root {
+      --sba-cream:        #FAF9F5;
+      --sba-cream-2:      #F5F1E8;
+      --sba-cream-3:      #EFEAD9;
+      --sba-paper:        #FFFFFF;
+      --sba-rule:         #E8E4D9;
+      --sba-rule-strong:  #D7D1C0;
+      --sba-ink:          #1F1E1D;
+      --sba-ink-2:        #3D3D3A;
+      --sba-ink-3:        #6B6A66;
+      --sba-ink-4:        #9A968D;
+      --sba-copper:       #E97133;
+      --sba-copper-deep:  #BD5A26;
+      --sba-copper-darker:#8F4319;
+      --sba-copper-soft:  #F5C6A8;
+      --sba-copper-wash:  #FCEDDC;
+      --sba-copper-mist:  #FDF6EE;
+      --sba-success:      #4F7A4A;
+      --sba-success-bg:   #ECF1E7;
+      --sba-danger:       #A8412C;
+      --sba-danger-bg:    #F7E4DE;
+      --sba-warn:         #B07A1F;
+      --sba-warn-bg:      #FAF1DD;
+      --sba-info:         #3E6A8C;
+      --sba-info-bg:      #E6EEF5;
+      --bg:               var(--sba-cream);
+      --bg-alt:           var(--sba-cream-2);
+      --surface:          var(--sba-paper);
+      --fg:               var(--sba-ink);
+      --fg-2:             var(--sba-ink-2);
+      --fg-3:             var(--sba-ink-3);
+      --border:           var(--sba-rule);
+      --border-strong:    var(--sba-rule-strong);
+      --brand:            var(--sba-copper);
+      --brand-hover:      var(--sba-copper-deep);
+      --font-serif:       "Source Serif 4", Georgia, serif;
+      --font-sans:        "Geist", -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono:        "Geist Mono", ui-monospace, "SF Mono", monospace;
+      --shadow-1:         0 1px 2px rgba(31,30,29,.04), 0 1px 1px rgba(31,30,29,.03);
+      --shadow-2:         0 4px 12px rgba(31,30,29,.06), 0 1px 2px rgba(31,30,29,.04);
+      --shadow-3:         0 12px 32px rgba(31,30,29,.08), 0 2px 6px rgba(31,30,29,.04);
+      --ease-out:         cubic-bezier(0.2, 0.7, 0.2, 1);
+      --ease-in-out:      cubic-bezier(0.5, 0, 0.2, 1);
+      --dur-fast:         140ms;
+      --dur-base:         220ms;
+      --r-sm:   8px;
+      --r-md:   12px;
+      --r-lg:   18px;
+      --r-xl:   24px;
+      --r-pill: 999px;
+      --content-wide: 1180px;
+      --gutter: clamp(20px, 4vw, 48px);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--fg);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    *:focus-visible {
+      outline: 2px solid color-mix(in oklab, var(--sba-copper) 60%, transparent);
+      outline-offset: 2px;
+      border-radius: 4px;
+    }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── LAYOUT ── */
+    .container {
+      max-width: var(--content-wide);
+      margin: 0 auto;
+      padding: 0 var(--gutter);
+    }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      background: var(--sba-ink);
+      color: rgba(250,249,245,.85);
+      font-family: var(--font-sans);
+      font-size: 12.5px;
+      position: relative;
+      z-index: 31;
+    }
+    .topbar-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px var(--gutter);
+      gap: 16px;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+    .topbar-phone {
+      color: var(--sba-cream);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-weight: 500;
+    }
+    .topbar-phone:hover { color: var(--sba-copper-soft); }
+    .topbar-hours { opacity: .75; }
+    .lang-toggle {
+      background: transparent;
+      border: 1px solid rgba(250,249,245,.2);
+      color: var(--sba-cream);
+      padding: 3px 12px;
+      border-radius: var(--r-pill);
+      cursor: pointer;
+      font-size: 12px;
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background var(--dur-fast) var(--ease-out);
+    }
+    .lang-toggle:hover { background: rgba(250,249,245,.12); }
+
+    /* ── STICKY NAV ── */
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: var(--bg);
+      border-bottom: 1px solid transparent;
+      transition:
+        background var(--dur-base) var(--ease-out),
+        border-color var(--dur-base) var(--ease-out),
+        backdrop-filter var(--dur-base) var(--ease-out);
+    }
+    .site-header.scrolled {
+      background: rgba(250,249,245,.82);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom-color: var(--border);
+    }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px var(--gutter);
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .nav-logo-mark {
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+    }
+    .nav-logo-name {
+      font-family: var(--font-serif);
+      font-size: 18px;
+      letter-spacing: -0.01em;
+      color: var(--sba-ink);
+      line-height: 1;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      list-style: none;
+    }
+    .nav-links a {
+      font-family: var(--font-sans);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--sba-ink-2);
+      text-decoration: none;
+      letter-spacing: -0.005em;
+      transition: color var(--dur-fast) var(--ease-out);
+    }
+    .nav-links a:hover { color: var(--sba-ink); }
+    .nav-links a.nav-active { color: var(--sba-copper); font-weight: 600; }
+    .btn-nav {
+      font-family: var(--font-sans);
+      font-weight: 500;
+      font-size: 13px;
+      padding: 7px 16px;
+      border-radius: var(--r-pill);
+      background: var(--sba-copper);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+      white-space: nowrap;
+    }
+    .btn-nav:hover { background: var(--sba-copper-deep); box-shadow: var(--shadow-2); }
+
+    /* Mobile nav trigger */
+    .nav-mobile-trigger {
+      display: none;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      padding: 8px;
+      cursor: pointer;
+      color: var(--sba-ink);
+    }
+    .nav-mobile-drawer {
+      display: none;
+      background: var(--sba-cream);
+      border-top: 1px solid var(--border);
+      padding: 18px var(--gutter) 28px;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .nav-mobile-drawer.open { display: flex; }
+    .nav-mobile-drawer a {
+      font-family: var(--font-sans);
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--sba-ink-2);
+      text-decoration: none;
+    }
+    .nav-mobile-drawer a.nav-active { color: var(--sba-copper); }
+
+    /* ── PAGE INTRO ── */
+    .page-intro {
+      padding: 80px var(--gutter) 64px;
+      max-width: var(--content-wide);
+      margin: 0 auto;
+      position: relative;
+    }
+    /* large faint ring motif — brand device */
+    .page-intro::before {
+      content: '';
+      position: absolute;
+      right: clamp(20px, 6vw, 100px);
+      top: 20px;
+      width: 340px;
+      height: 340px;
+      border-radius: 50%;
+      border: 56px solid rgba(233,113,51,.06);
+      pointer-events: none;
+    }
+    .page-eyebrow {
+      font-family: var(--font-sans);
+      font-weight: 500;
+      font-size: 12px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--sba-copper);
+      margin-bottom: 14px;
+    }
+    .page-heading {
+      font-family: var(--font-serif);
+      font-weight: 400;
+      font-size: clamp(36px, 5vw, 56px);
+      line-height: 1.08;
+      letter-spacing: -0.022em;
+      color: var(--fg);
+      margin-bottom: 18px;
+    }
+    .page-lede {
+      font-family: var(--font-sans);
+      font-size: 18px;
+      line-height: 1.55;
+      color: var(--fg-2);
+      max-width: 560px;
+    }
+
+    /* ── SECTION SPACING ── */
+    .section { padding: 96px var(--gutter); }
+    .section-alt { background: var(--bg-alt); }
+    .section-container { max-width: var(--content-wide); margin: 0 auto; }
+
+    /* Section eyebrow + heading combo */
+    .section-eyebrow {
+      font-family: var(--font-sans);
+      font-weight: 500;
+      font-size: 12px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--sba-copper);
+      margin-bottom: 12px;
+    }
+    .section-heading {
+      font-family: var(--font-serif);
+      font-weight: 400;
+      font-size: clamp(28px, 4vw, 40px);
+      line-height: 1.12;
+      letter-spacing: -0.018em;
+      color: var(--fg);
+      margin-bottom: 14px;
+    }
+    .section-sub {
+      font-size: 16px;
+      line-height: 1.6;
+      color: var(--fg-2);
+      max-width: 580px;
+    }
+
+    /* ── TOOL CARDS (intro row) ── */
+    .tool-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 48px;
+    }
+    .tool-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 28px 24px;
+      transition: box-shadow var(--dur-base) var(--ease-out);
+    }
+    .tool-card:hover { box-shadow: var(--shadow-3); }
+    .tool-card.tool-active {
+      border-color: var(--sba-copper);
+      background: var(--sba-copper-mist);
+    }
+    .tool-card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--sba-copper-wash);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+    .tool-card.tool-active .tool-card-icon { background: var(--sba-copper); }
+    .tool-card-title {
+      font-family: var(--font-sans);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--fg);
+      margin-bottom: 6px;
+    }
+    .tool-card-desc { font-size: 13.5px; color: var(--fg-3); line-height: 1.6; }
+    .tool-coming {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--sba-ink-4);
+      margin-top: 10px;
+    }
+
+    /* ── CALCULATOR CARD ── */
+    .calc-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-xl);
+      box-shadow: var(--shadow-2);
+      overflow: hidden;
+    }
+    .calc-card-header {
+      padding: 22px 28px;
+      border-bottom: 1px solid var(--border);
+      background: var(--sba-cream-2);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .calc-card-title {
+      font-family: var(--font-serif);
+      font-size: 20px;
+      font-weight: 400;
+      color: var(--fg);
+      margin-bottom: 3px;
+    }
+    .calc-card-sub { font-size: 13px; color: var(--fg-3); }
+    .calc-disclaimer {
+      font-size: 11.5px;
+      color: var(--sba-ink-4);
+      font-style: italic;
+      text-align: right;
+      max-width: 280px;
+      line-height: 1.5;
+    }
+    .calc-body { padding: 28px; }
+
+    /* Add trade form */
+    .add-form {
+      display: grid;
+      grid-template-columns: 130px 110px 100px 80px 110px 110px auto;
+      gap: 10px;
+      align-items: end;
+      background: var(--sba-cream);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    .field-label {
+      font-family: var(--font-sans);
+      font-size: 11px;
+      color: var(--sba-ink-3);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      font-weight: 500;
+      margin-bottom: 5px;
+      display: block;
+    }
+    .field-input {
+      font-family: var(--font-sans);
+      font-size: 13.5px;
+      padding: 9px 12px;
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      border-radius: var(--r-sm);
+      color: var(--sba-ink);
+      outline: none;
+      width: 100%;
+      transition: border-color var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+    }
+    .field-input:focus {
+      border-color: var(--sba-copper);
+      box-shadow: 0 0 0 3px color-mix(in oklab, var(--sba-copper) 18%, transparent);
+    }
+    .field-input[type="number"] { font-family: var(--font-mono); -moz-appearance: textfield; }
+    .field-input[type="number"]::-webkit-outer-spin-button,
+    .field-input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+    .type-select option[value="buy"]  { color: var(--sba-info); }
+    .type-select option[value="sell"] { color: var(--sba-copper-darker); }
+
+    /* Buttons */
+    .btn-primary {
+      font-family: var(--font-sans);
+      font-weight: 500;
+      font-size: 13.5px;
+      padding: 10px 18px;
+      border-radius: var(--r-pill);
+      background: var(--sba-copper);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+      transition: background var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+    }
+    .btn-primary:hover { background: var(--sba-copper-deep); box-shadow: var(--shadow-2); }
+    .btn-secondary {
+      font-family: var(--font-sans);
+      font-weight: 500;
+      font-size: 13.5px;
+      padding: 10px 18px;
+      border-radius: var(--r-pill);
+      background: transparent;
+      color: var(--sba-ink);
+      border: 1px solid var(--border-strong);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      transition: background var(--dur-base) var(--ease-out);
+    }
+    .btn-secondary:hover { background: var(--bg-alt); }
+    .btn-icon {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--sba-ink-3);
+      padding: 6px;
+      border-radius: var(--r-sm);
+      display: inline-flex;
+      align-items: center;
+      transition: color var(--dur-fast), background var(--dur-fast);
+    }
+    .btn-icon:hover { color: var(--sba-danger); background: var(--sba-danger-bg); }
+
+    /* Trade table */
+    .table-wrap { overflow-x: auto; margin-bottom: 0; }
+    table.trade-tbl {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--font-sans);
+      font-size: 13.5px;
+      min-width: 680px;
+    }
+    .trade-tbl th {
+      text-align: left;
+      padding: 10px 14px;
+      font-size: 11px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--sba-ink-3);
+      font-weight: 500;
+      border-bottom: 1px solid var(--border);
+      background: var(--sba-cream);
+      white-space: nowrap;
+    }
+    .trade-tbl td { padding: 12px 14px; border-bottom: 1px solid var(--border); color: var(--fg-2); }
+    .trade-tbl tr:last-child td { border-bottom: none; }
+    .td-mono { font-family: var(--font-mono); }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: var(--r-pill);
+      font-size: 11.5px;
+      font-weight: 500;
+    }
+    .pill-buy  { background: var(--sba-info-bg);   color: var(--sba-info); }
+    .pill-sell { background: var(--sba-copper-wash); color: var(--sba-copper-darker); }
+
+    /* Realised P&L footer */
+    .pnl-footer {
+      padding: 18px 28px;
+      border-top: 1px solid var(--border);
+      background: var(--sba-cream);
+    }
+    .pnl-summary {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .pnl-label {
+      font-size: 11.5px;
+      color: var(--sba-ink-3);
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    .pnl-value {
+      font-family: var(--font-mono);
+      font-size: 30px;
+      line-height: 1;
+    }
+    .pnl-pos { color: var(--sba-success); }
+    .pnl-neg { color: var(--sba-danger); }
+    .pnl-disclaimer { font-size: 13px; color: var(--sba-ink-3); max-width: 420px; line-height: 1.5; }
+
+    /* Realised breakdown rows */
+    .realised-rows { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 12px; }
+    .realised-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      padding: 5px 0;
+      color: var(--fg-2);
+      font-family: var(--font-mono);
+    }
+    .realised-row-label { font-family: var(--font-sans); color: var(--sba-ink-3); }
+
+    /* Chart */
+    .chart-section { margin-top: 28px; }
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-1);
+    }
+    .chart-title {
+      font-family: var(--font-sans);
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--fg);
+      margin-bottom: 18px;
+    }
+    .chart-canvas-wrap { position: relative; height: 220px; }
+
+    /* Controls bar */
+    .controls-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .tax-field {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-left: auto;
+      flex-wrap: wrap;
+    }
+    .tax-field label {
+      font-size: 12.5px;
+      color: var(--fg-3);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .tax-select {
+      font-family: var(--font-sans);
+      font-size: 13px;
+      padding: 8px 12px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--r-sm);
+      background: var(--surface);
+      color: var(--sba-ink);
+      outline: none;
+      cursor: pointer;
+    }
+    .tax-select:focus { border-color: var(--sba-copper); }
+
+    /* CGT note */
+    .cgt-note {
+      margin-top: 24px;
+      padding: 18px 22px;
+      background: var(--sba-copper-mist);
+      border: 1px solid color-mix(in oklab, var(--sba-copper) 18%, transparent);
+      border-radius: var(--r-md);
+      font-size: 13px;
+      color: var(--fg-2);
+      line-height: 1.65;
+    }
+    .cgt-note strong { color: var(--sba-copper-darker); }
+
+    /* Empty state */
+    .table-empty {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--sba-ink-4);
+      font-size: 14px;
+    }
+
+    /* ── CONSULTATION BANNER ── */
+    .consult-section { padding: 96px var(--gutter); }
+    .consult-card {
+      max-width: var(--content-wide);
+      margin: 0 auto;
+      background: var(--sba-ink);
+      border-radius: var(--r-2xl, 32px);
+      padding: 64px 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 40px;
+      flex-wrap: wrap;
+      position: relative;
+      overflow: hidden;
+    }
+    .consult-card::before {
+      content: '';
+      position: absolute;
+      right: -60px;
+      top: -60px;
+      width: 300px;
+      height: 300px;
+      border-radius: 50%;
+      border: 52px solid rgba(233,113,51,.09);
+      pointer-events: none;
+    }
+    .consult-eyebrow {
+      font-size: 11px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--sba-copper-soft);
+      font-weight: 500;
+      margin-bottom: 12px;
+    }
+    .consult-heading {
+      font-family: var(--font-serif);
+      font-size: clamp(28px, 4vw, 38px);
+      font-weight: 400;
+      color: var(--sba-cream);
+      letter-spacing: -0.018em;
+      line-height: 1.12;
+      margin-bottom: 12px;
+    }
+    .consult-sub { font-size: 15px; color: rgba(250,249,245,.65); line-height: 1.55; max-width: 380px; }
+    .btn-consult {
+      font-family: var(--font-sans);
+      font-weight: 500;
+      font-size: 15px;
+      padding: 14px 28px;
+      border-radius: var(--r-pill);
+      background: var(--sba-cream);
+      color: var(--sba-ink);
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+      transition: background var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+    }
+    .btn-consult:hover { background: #fff; box-shadow: var(--shadow-3); }
+
+    /* ── FOOTER ── */
+    .site-footer {
+      background: var(--sba-ink);
+      color: var(--sba-cream);
+      padding: 80px 0 32px;
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr 1fr;
+      gap: 40px;
+      margin-bottom: 56px;
+    }
+    .footer-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+      text-decoration: none;
+    }
+    .footer-logo-name {
+      font-family: var(--font-serif);
+      font-size: 18px;
+      color: var(--sba-cream);
+      letter-spacing: -0.01em;
+    }
+    .footer-desc { font-size: 14px; line-height: 1.6; color: rgba(250,249,245,.7); margin-bottom: 22px; max-width: 340px; }
+    .footer-contact { display: flex; flex-direction: column; gap: 10px; font-size: 14px; }
+    .footer-contact a { color: rgba(250,249,245,.82); text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+    .footer-contact a:hover { color: var(--sba-cream); }
+    .footer-col-title {
+      font-size: 11px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: rgba(250,249,245,.5);
+      margin-bottom: 16px;
+      font-weight: 500;
+    }
+    .footer-links { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .footer-links a { font-size: 14px; color: rgba(250,249,245,.82); text-decoration: none; }
+    .footer-links a:hover { color: var(--sba-cream); }
+    .footer-bottom {
+      margin-top: 56px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(250,249,245,.15);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      font-size: 12.5px;
+      color: rgba(250,249,245,.55);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 920px) {
+      .nav-links, .btn-nav { display: none; }
+      .nav-mobile-trigger { display: flex; }
+      .tool-cards { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 700px) {
+      .tool-cards { grid-template-columns: 1fr; }
+      .add-form { grid-template-columns: 1fr 1fr; }
+      .consult-card { padding: 40px 28px; }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+      .tax-field { margin-left: 0; width: 100%; }
+    }
+    @media (max-width: 480px) {
+      .footer-grid { grid-template-columns: 1fr; }
+      .add-form { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── TOPBAR ── -->
+<div class="topbar">
+  <div class="topbar-inner container">
+    <div class="topbar-left">
+      <a href="tel:1300915491" class="topbar-phone">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--sba-copper-soft)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        1300 915 491
+      </a>
+      <span class="topbar-hours">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        Mon–Fri · 9:00–17:30 AEST
+      </span>
+    </div>
+    <button class="lang-toggle" onclick="this.textContent = this.textContent.trim() === '中文' ? 'EN' : '中文'">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      中文
+    </button>
+  </div>
+</div>
+
+<!-- ── STICKY NAV ── -->
+<header class="site-header" id="siteHeader">
+  <div class="nav-inner container">
+    <a href="index.html" class="nav-logo">
+      <svg class="nav-logo-mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M50 8 A42 42 0 0 1 92 50" stroke="#E97133" stroke-width="16" stroke-linecap="round" fill="none"/>
+        <path d="M92 50 A42 42 0 0 1 50 92" stroke="#BD5A26" stroke-width="16" stroke-linecap="round" fill="none"/>
+        <path d="M50 92 A42 42 0 0 1 8 50"  stroke="#E97133" stroke-width="16" stroke-linecap="round" fill="none"/>
+        <path d="M8 50 A42 42 0 0 1 50 8"   stroke="#BD5A26" stroke-width="16" stroke-linecap="round" fill="none"/>
+        <rect x="30" y="58" width="9" height="16" rx="2" fill="#E97133"/>
+        <rect x="45" y="46" width="9" height="28" rx="2" fill="#E97133"/>
+        <rect x="60" y="36" width="9" height="38" rx="2" fill="#BD5A26"/>
+      </svg>
+      <span class="nav-logo-name">Smart Business Accounting</span>
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="index.html#services">Services</a></li>
+      <li><a href="index.html#advantages">Why us</a></li>
+      <li><a href="tools.html" class="nav-active">Tools</a></li>
+      <li><a href="index.html#news">News</a></li>
+      <li><a href="index.html#contact">Contact</a></li>
+    </ul>
+    <a href="index.html#contact" class="btn-nav">Book a chat →</a>
+
+    <!-- Mobile trigger -->
+    <button class="nav-mobile-trigger" id="navToggle" aria-label="Menu" onclick="document.getElementById('mobileDrawer').classList.toggle('open')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="nav-mobile-drawer" id="mobileDrawer">
+    <a href="index.html#services">Services</a>
+    <a href="index.html#advantages">Why us</a>
+    <a href="tools.html" class="nav-active">Tools</a>
+    <a href="index.html#news">News</a>
+    <a href="index.html#contact">Contact</a>
+    <a href="index.html#contact" class="btn-primary" style="margin-top:6px;justify-content:center;">Book a chat →</a>
+  </div>
+</header>
+
+<!-- ── PAGE INTRO ── -->
+<div class="page-intro">
+  <div class="page-eyebrow">Free tool</div>
+  <h1 class="page-heading">Share trading P&amp;L,<br>in seconds.</h1>
+  <p class="page-lede">Add your buys and sells. We'll run FIFO cost-base and show realised gains — useful before talking to us about CGT strategy.</p>
+</div>
+
+<!-- ── TOOL CARDS ── -->
+<div class="section section-alt">
+  <div class="section-container">
+    <div class="section-eyebrow">Available tools</div>
+    <h2 class="section-heading">Calculators &amp; resources</h2>
+    <p class="section-sub">Quick estimates for common tax and investment scenarios. These are general guides — for your specific situation, book a free chat.</p>
+    <div class="tool-cards">
+      <div class="tool-card tool-active">
+        <div class="tool-card-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+        </div>
+        <div class="tool-card-title">Share trading P&amp;L</div>
+        <div class="tool-card-desc">FIFO cost base, realised gain/loss, CGT discount check, and marginal tax estimate across multiple trades.</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-card-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--sba-copper)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <div class="tool-card-title">Investment property</div>
+        <div class="tool-card-desc">Rental yield, negative gearing benefit, and deductible expenses. Estimate your property tax position.</div>
+        <div class="tool-coming">Coming soon</div>
+      </div>
+      <div class="tool-card">
+        <div class="tool-card-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--sba-copper)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        </div>
+        <div class="tool-card-title">Business tax estimator</div>
+        <div class="tool-card-desc">Company tax, PAYG instalment, and Division 7A implications for your business structure.</div>
+        <div class="tool-coming">Coming soon</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── CALCULATOR ── -->
+<div class="section" id="calculator">
+  <div class="section-container">
+    <div style="max-width:620px; margin-bottom:36px;">
+      <div class="section-eyebrow">Share trading</div>
+      <h2 class="section-heading">Share trading P&amp;L calculator</h2>
+      <p class="section-sub">Enter individual buy and sell trades. The calculator uses FIFO (first-in, first-out) to match sells against your earliest buys and work out your cost base.</p>
+    </div>
+
+    <div class="calc-card">
+      <!-- Card header -->
+      <div class="calc-card-header">
+        <div>
+          <div class="calc-card-title">Share trading profit &amp; loss</div>
+          <div class="calc-card-sub">FIFO cost base · CGT 50% discount check · Marginal tax estimate</div>
+        </div>
+        <div class="calc-disclaimer">General estimate only — not financial or tax advice. Consult a registered tax agent for your specific situation.</div>
+      </div>
+
+      <div class="calc-body">
+        <!-- Add trade form -->
+        <div class="add-form" id="addForm">
+          <div>
+            <label class="field-label" for="fDate">Date</label>
+            <input type="date" id="fDate" class="field-input" value="">
+          </div>
+          <div>
+            <label class="field-label" for="fTicker">Ticker</label>
+            <input type="text" id="fTicker" class="field-input" placeholder="CBA">
+          </div>
+          <div>
+            <label class="field-label" for="fType">Type</label>
+            <select id="fType" class="field-input type-select">
+              <option value="buy">Buy</option>
+              <option value="sell">Sell</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" for="fQty">Qty</label>
+            <input type="number" id="fQty" class="field-input" placeholder="50" min="0" step="1">
+          </div>
+          <div>
+            <label class="field-label" for="fPrice">Price $</label>
+            <input type="number" id="fPrice" class="field-input" placeholder="112.40" min="0" step="0.001">
+          </div>
+          <div>
+            <label class="field-label" for="fBrok">Brokerage $</label>
+            <input type="number" id="fBrok" class="field-input" value="9.95" min="0" step="0.01">
+          </div>
+          <div>
+            <button class="btn-primary" id="btnAdd" onclick="addTrade()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add
+            </button>
+          </div>
+        </div>
+
+        <!-- Controls bar -->
+        <div class="controls-bar">
+          <button class="btn-secondary" onclick="clearAll()">Clear all</button>
+          <div class="tax-field">
+            <label for="taxRate">Marginal tax rate</label>
+            <select id="taxRate" class="tax-select">
+              <option value="0">0%</option>
+              <option value="19">19% ($18,201–$45,000)</option>
+              <option value="32.5" selected>32.5% ($45,001–$135,000)</option>
+              <option value="37">37% ($135,001–$190,000)</option>
+              <option value="45">45% ($190,001+)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Trade table -->
+        <div class="table-wrap">
+          <table class="trade-tbl" id="tradeTbl">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Ticker</th>
+                <th>Type</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th>Brokerage</th>
+                <th>Net value</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tradeBody">
+              <tr><td colspan="8" class="table-empty">No trades yet. Add your first trade above.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- P&L footer -->
+      <div class="pnl-footer" id="pnlFooter" style="display:none;">
+        <div class="pnl-summary">
+          <div>
+            <div class="pnl-label">Realised P&amp;L · FIFO</div>
+            <div class="pnl-value" id="pnlValue">—</div>
+          </div>
+          <div class="pnl-disclaimer">
+            Estimate only. Real CGT depends on holding period, marginal rates, and applicable discounts. We'll work the real number with you.
+          </div>
+        </div>
+        <div class="realised-rows" id="realisedRows"></div>
+      </div>
+    </div>
+
+    <!-- Chart (appears after first sell) -->
+    <div class="chart-section" id="chartSection" style="display:none;">
+      <div class="chart-card">
+        <div class="chart-title">Realised P&amp;L by trade</div>
+        <div class="chart-canvas-wrap"><canvas id="plChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- CGT note -->
+    <div class="cgt-note" style="margin-top:28px;">
+      <strong>CGT discount:</strong> Australian resident individuals may be eligible for a 50% CGT discount on gains from assets held for more than 12 months. Superannuation funds receive 33&#8531;%. Companies are not eligible. Capital losses must be offset against gains before any discount applies. This calculator does not apply the discount automatically — discuss your eligibility with your tax agent before lodging.
+    </div>
+  </div>
+</div>
+
+<!-- ── CONSULTATION BANNER ── -->
+<div class="consult-section">
+  <div class="consult-card">
+    <div>
+      <div class="consult-eyebrow">One step further</div>
+      <div class="consult-heading">Need the real CGT number?</div>
+      <p class="consult-sub">Our registered tax agents handle share trading schedules, CGT discount calculations, and ATO lodgements — in English or 中文.</p>
+    </div>
+    <a href="index.html#contact" class="btn-consult">Book a free 20-minute chat →</a>
+  </div>
+</div>
+
+<!-- ── FOOTER ── -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <a href="index.html" class="footer-logo">
+          <svg width="28" height="28" viewBox="0 0 100 100" fill="none">
+            <path d="M50 8 A42 42 0 0 1 92 50" stroke="#E97133" stroke-width="16" stroke-linecap="round" fill="none"/>
+            <path d="M92 50 A42 42 0 0 1 50 92" stroke="#BD5A26" stroke-width="16" stroke-linecap="round" fill="none"/>
+            <path d="M50 92 A42 42 0 0 1 8 50"  stroke="#E97133" stroke-width="16" stroke-linecap="round" fill="none"/>
+            <path d="M8 50 A42 42 0 0 1 50 8"   stroke="#BD5A26" stroke-width="16" stroke-linecap="round" fill="none"/>
+            <rect x="30" y="58" width="9" height="16" rx="2" fill="#E97133"/>
+            <rect x="45" y="46" width="9" height="28" rx="2" fill="#E97133"/>
+            <rect x="60" y="36" width="9" height="38" rx="2" fill="#BD5A26"/>
+          </svg>
+          <span class="footer-logo-name">Smart Business Accounting</span>
+        </a>
+        <p class="footer-desc">An IPA-certified accounting practice serving Australian individuals, property investors, and growing businesses — in English and 中文.</p>
+        <div class="footer-contact">
+          <a href="tel:1300915491">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            1300 915 491
+          </a>
+          <a href="mailto:info@smartbusinessaccounting.com.au">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            info@smartbusinessaccounting.com.au
+          </a>
+        </div>
+      </div>
+
+      <div>
+        <div class="footer-col-title">Services</div>
+        <ul class="footer-links">
+          <li><a href="#">Individual tax</a></li>
+          <li><a href="#">Business tax</a></li>
+          <li><a href="#">Business consulting</a></li>
+          <li><a href="#">Business accounting</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="footer-col-title">Tools</div>
+        <ul class="footer-links">
+          <li><a href="tools.html">Share trading P&amp;L</a></li>
+          <li><a href="#">Capital gain estimator</a></li>
+          <li><a href="#">Tax checklist</a></li>
+          <li><a href="#">Rental income template</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="footer-col-title">Firm</div>
+        <ul class="footer-links">
+          <li><a href="about_us.html">About us</a></li>
+          <li><a href="#">News</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div>Smart Business Accounting is an IPA-certified accounting practice. Liability limited by a scheme approved under Professional Standards Legislation.</div>
+      <div>© <span id="yr"></span> Smart Business Accounting</div>
+    </div>
+  </div>
+</footer>
+
+<!-- ── CALCULATOR LOGIC ── -->
+<script>
+  document.getElementById('yr').textContent = new Date().getFullYear();
+
+  // Frosted-glass nav on scroll
+  const hdr = document.getElementById('siteHeader');
+  window.addEventListener('scroll', () => {
+    hdr.classList.toggle('scrolled', window.scrollY > 8);
+  }, { passive: true });
+
+  // Set default date to today
+  document.getElementById('fDate').value = new Date().toISOString().slice(0, 10);
+
+  /* ── State ── */
+  let trades = [];
+  let nextId = 1;
+  let plChart = null;
+
+  const fmt = n => '$' + Math.abs(n).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtSigned = n => (n >= 0 ? '+' : '−') + fmt(n);
+
+  /* ── FIFO P&L ── */
+  function computePnL(allTrades) {
+    const sorted = [...allTrades].sort((a, b) => a.date < b.date ? -1 : 1);
+    const lots = {};
+    const realised = [];
+
+    for (const t of sorted) {
+      if (!lots[t.ticker]) lots[t.ticker] = [];
+      if (t.type === 'buy') {
+        lots[t.ticker].push({ qty: t.qty, costPerShare: t.price + t.brokerage / t.qty, date: t.date });
+      } else {
+        let qtyLeft = t.qty;
+        let costBase = 0;
+        let oldestBuyDate = null;
+        while (qtyLeft > 0 && lots[t.ticker] && lots[t.ticker].length) {
+          const lot = lots[t.ticker][0];
+          const take = Math.min(lot.qty, qtyLeft);
+          if (!oldestBuyDate) oldestBuyDate = lot.date;
+          costBase += take * lot.costPerShare;
+          lot.qty -= take;
+          qtyLeft -= take;
+          if (lot.qty === 0) lots[t.ticker].shift();
+        }
+        const proceeds = t.qty * t.price - t.brokerage;
+        const pnl = proceeds - costBase;
+        const heldDays = oldestBuyDate
+          ? Math.round((new Date(t.date) - new Date(oldestBuyDate)) / 86400000)
+          : null;
+        realised.push({
+          ticker: t.ticker, sellDate: t.date, qty: t.qty,
+          costBase, proceeds, pnl, heldDays,
+          cgtEligible: heldDays !== null && heldDays > 365 && pnl > 0
+        });
+      }
+    }
+    const totalPnL = realised.reduce((s, r) => s + r.pnl, 0);
+    return { realised, totalPnL };
+  }
+
+  /* ── Add trade ── */
+  function addTrade() {
+    const date   = document.getElementById('fDate').value;
+    const ticker = document.getElementById('fTicker').value.trim().toUpperCase();
+    const type   = document.getElementById('fType').value;
+    const qty    = parseFloat(document.getElementById('fQty').value);
+    const price  = parseFloat(document.getElementById('fPrice').value);
+    const brok   = parseFloat(document.getElementById('fBrok').value) || 0;
+
+    if (!date || !ticker || !qty || !price) {
+      document.getElementById('fTicker').focus();
+      return;
+    }
+
+    trades.push({ id: nextId++, date, ticker, type, qty, price, brokerage: brok });
+    document.getElementById('fTicker').value = '';
+    document.getElementById('fQty').value = '';
+    document.getElementById('fPrice').value = '';
+    document.getElementById('fDate').value = new Date().toISOString().slice(0, 10);
+
+    render();
+  }
+
+  /* ── Remove trade ── */
+  function removeTrade(id) {
+    trades = trades.filter(t => t.id !== id);
+    render();
+  }
+
+  /* ── Clear all ── */
+  function clearAll() {
+    trades = [];
+    render();
+  }
+
+  /* ── Render everything ── */
+  function render() {
+    renderTable();
+    const { realised, totalPnL } = computePnL(trades);
+    renderPnL(realised, totalPnL);
+    renderChart(realised);
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('tradeBody');
+    if (trades.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" class="table-empty">No trades yet. Add your first trade above.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = trades.map(t => {
+      const net = (t.type === 'buy' ? -1 : 1) * t.qty * t.price - t.brokerage;
+      const netCol = net >= 0
+        ? `<span style="color:var(--sba-success)">${fmt(net)}</span>`
+        : `<span style="color:var(--sba-danger)">−${fmt(net)}</span>`;
+      return `<tr>
+        <td>${t.date}</td>
+        <td style="font-weight:600">${t.ticker}</td>
+        <td><span class="pill pill-${t.type}">${t.type === 'buy' ? 'Buy' : 'Sell'}</span></td>
+        <td class="td-mono">${t.qty.toLocaleString()}</td>
+        <td class="td-mono">${fmt(t.price)}</td>
+        <td class="td-mono">${fmt(t.brokerage)}</td>
+        <td class="td-mono">${netCol}</td>
+        <td>
+          <button class="btn-icon" onclick="removeTrade(${t.id})" title="Remove">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  function renderPnL(realised, totalPnL) {
+    const footer = document.getElementById('pnlFooter');
+    if (realised.length === 0) { footer.style.display = 'none'; return; }
+
+    footer.style.display = 'block';
+    const taxRate = parseFloat(document.getElementById('taxRate').value) / 100;
+    const taxable = realised.reduce((s, r) => s + (r.pnl > 0 ? r.pnl : 0), 0);
+    const taxEst = taxable * taxRate;
+
+    const valEl = document.getElementById('pnlValue');
+    valEl.textContent = (totalPnL >= 0 ? '+' : '−') + fmt(totalPnL);
+    valEl.className = 'pnl-value ' + (totalPnL >= 0 ? 'pnl-pos' : 'pnl-neg');
+
+    const rows = document.getElementById('realisedRows');
+    rows.innerHTML = realised.map(r => {
+      const held = r.heldDays !== null ? ` · ${r.heldDays}d held` : '';
+      const cgt = r.cgtEligible ? ' · <span style="color:var(--sba-success);font-family:var(--font-sans);font-size:11px;font-weight:500">CGT discount may apply</span>' : '';
+      return `<div class="realised-row">
+        <span class="realised-row-label">${r.sellDate} · ${r.ticker} · sold ${r.qty}${held}${cgt}</span>
+        <span style="color:${r.pnl >= 0 ? 'var(--sba-success)' : 'var(--sba-danger)'}">${r.pnl >= 0 ? '+' : '−'}${fmt(r.pnl)}</span>
+      </div>`;
+    }).join('');
+
+    if (taxRate > 0 && taxable > 0) {
+      rows.innerHTML += `<div class="realised-row" style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">
+        <span class="realised-row-label">Estimated tax at ${(taxRate*100).toFixed(1)}% on ${fmt(taxable)} gain</span>
+        <span style="color:var(--sba-warn)">~${fmt(taxEst)}</span>
+      </div>`;
+    }
+  }
+
+  function renderChart(realised) {
+    const section = document.getElementById('chartSection');
+    if (realised.length === 0) {
+      section.style.display = 'none';
+      if (plChart) { plChart.destroy(); plChart = null; }
+      return;
+    }
+    section.style.display = 'block';
+
+    const labels = realised.map(r => `${r.ticker} ${r.sellDate.slice(5)}`);
+    const gains  = realised.map(r => r.pnl >= 0 ? r.pnl : 0);
+    const losses = realised.map(r => r.pnl < 0 ? Math.abs(r.pnl) : 0);
+
+    if (plChart) { plChart.destroy(); plChart = null; }
+    plChart = new Chart(document.getElementById('plChart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Gain',
+            data: gains,
+            backgroundColor: 'rgba(79,122,74,.55)',
+            borderColor: '#4F7A4A',
+            borderWidth: 1,
+            borderRadius: 5,
+          },
+          {
+            label: 'Loss',
+            data: losses,
+            backgroundColor: 'rgba(168,65,44,.55)',
+            borderColor: '#A8412C',
+            borderWidth: 1,
+            borderRadius: 5,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { font: { family: "'Geist', sans-serif", size: 12 }, color: '#6B6A66', boxWidth: 12, padding: 16 }
+          },
+          tooltip: {
+            callbacks: {
+              label: c => ' ' + c.dataset.label + ': ' + fmt(c.parsed.y)
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { font: { family: "'Geist', sans-serif", size: 12 }, color: '#6B6A66' },
+            grid: { display: false }
+          },
+          y: {
+            ticks: {
+              font: { family: "'Geist Mono', monospace", size: 11 },
+              color: '#9A968D',
+              callback: v => '$' + (v >= 1000 ? (v/1000).toFixed(0) + 'k' : v.toFixed(0))
+            },
+            grid: { color: 'rgba(232,228,217,.6)' }
+          }
+        }
+      }
+    });
+  }
+
+  // Re-render when tax rate changes
+  document.getElementById('taxRate').addEventListener('change', () => {
+    const { realised, totalPnL } = computePnL(trades);
+    renderPnL(realised, totalPnL);
+  });
+
+  // Keyboard shortcut: Enter in ticker/qty/price fields adds trade
+  ['fTicker','fQty','fPrice','fBrok'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') addTrade();
+    });
+  });
+
+  // Seed sample data
+  trades = [
+    { id: nextId++, date: '2023-06-15', ticker: 'BHP',  type: 'buy',  qty: 500, price: 42.50, brokerage: 9.95 },
+    { id: nextId++, date: '2024-01-10', ticker: 'CBA',  type: 'buy',  qty: 100, price: 115.20, brokerage: 9.95 },
+    { id: nextId++, date: '2024-08-20', ticker: 'BHP',  type: 'sell', qty: 500, price: 47.80, brokerage: 9.95 },
+    { id: nextId++, date: '2024-09-05', ticker: 'CBA',  type: 'sell', qty: 100, price: 128.60, brokerage: 9.95 },
+  ];
+  render();
+</script>
+</body>
+</html>
