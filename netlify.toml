@@ -1,13 +1,13 @@
 [build]
   publish = "."
 
-# Serve /tools cleanly (directory index)
+# /tools serves the tools page with a clean URL (no .html visible)
 [[redirects]]
   from = "/tools"
-  to   = "/tools/index.html"
+  to   = "/tools.html"
   status = 200
 
-# JSX files must be served as JavaScript so @babel/standalone can load them
+# JSX files must be served as JavaScript for @babel/standalone
 [[headers]]
   for = "/*.jsx"
   [headers.values]
