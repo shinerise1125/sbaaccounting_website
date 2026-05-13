@@ -1,7 +1,17 @@
 [build]
   publish = "."
 
-# Clean URLs: /tools → /tools/index.html (handled automatically by Netlify)
+# Serve /tools cleanly (directory index)
+[[redirects]]
+  from = "/tools"
+  to   = "/tools/index.html"
+  status = 200
+
+# JSX files must be served as JavaScript so @babel/standalone can load them
+[[headers]]
+  for = "/*.jsx"
+  [headers.values]
+    Content-Type = "text/javascript; charset=utf-8"
 
 [[headers]]
   for = "/*"
