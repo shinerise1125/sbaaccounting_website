@@ -1,10 +1,7 @@
 [build]
   publish = "."
 
-[[redirects]]
-  from = "/tools"
-  to   = "/tools.html"
-  status = 200
+# Clean URLs: /tools → /tools/index.html (handled automatically by Netlify)
 
 [[headers]]
   for = "/*"

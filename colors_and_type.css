@@ -1,0 +1,267 @@
+/* ─────────────────────────────────────────────────────────────
+   SBA Design System — Tokens
+   Smart Business Accounting × Claude-inspired
+   ───────────────────────────────────────────────────────────── */
+
+/* Fonts via Google Fonts — Source Serif 4 (display/serif) + Geist (sans + mono).
+   Source Serif 4 substitutes for Tiempos Headline. Geist substitutes for Söhne. */
+@import url("https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,300;8..60,400;8..60,500;8..60,600;8..60,700&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap");
+
+:root {
+  /* ── COLOR — Foundational palette ──────────────────────────── */
+
+  /* Warm neutrals (Claude tofu/cream stack) */
+  --sba-cream:        #FAF9F5;   /* page background */
+  --sba-cream-2:      #F5F1E8;   /* secondary surface, alt sections */
+  --sba-cream-3:      #EFEAD9;   /* deeper warm wash */
+  --sba-paper:        #FFFFFF;   /* card / elevated surface */
+  --sba-rule:         #E8E4D9;   /* hairline borders, dividers */
+  --sba-rule-strong:  #D7D1C0;   /* emphasised border */
+
+  /* Ink */
+  --sba-ink:          #1F1E1D;   /* primary text */
+  --sba-ink-2:        #3D3D3A;   /* secondary text */
+  --sba-ink-3:        #6B6A66;   /* tertiary, captions */
+  --sba-ink-4:        #9A968D;   /* placeholder, very muted */
+
+  /* Brand — SBA copper/orange (bridges SBA #EE7837 and Claude #D97757) */
+  --sba-copper:        #E97133;   /* primary brand */
+  --sba-copper-deep:   #BD5A26;   /* hover / pressed */
+  --sba-copper-darker: #8F4319;   /* on-cream accent text */
+  --sba-copper-soft:   #F5C6A8;   /* soft tint */
+  --sba-copper-wash:   #FCEDDC;   /* badge / section wash */
+  --sba-copper-mist:   #FDF6EE;   /* faintest wash */
+
+  /* Accent — supports brand for charts & illustration */
+  --sba-clay:         #B4593C;
+  --sba-ochre:        #C9882E;
+  --sba-moss:         #5C7A4F;
+  --sba-slate:        #3E4A57;
+  --sba-plum:         #6E4459;
+
+  /* Semantic */
+  --sba-success:      #4F7A4A;
+  --sba-success-bg:   #ECF1E7;
+  --sba-info:         #3E6A8C;
+  --sba-info-bg:      #E6EEF5;
+  --sba-warn:         #B07A1F;
+  --sba-warn-bg:      #FAF1DD;
+  --sba-danger:       #A8412C;
+  --sba-danger-bg:    #F7E4DE;
+
+  /* ── COLOR — Semantic aliases ──────────────────────────────── */
+  --bg:               var(--sba-cream);
+  --bg-alt:           var(--sba-cream-2);
+  --bg-deep:          var(--sba-cream-3);
+  --surface:          var(--sba-paper);
+  --fg:               var(--sba-ink);
+  --fg-2:             var(--sba-ink-2);
+  --fg-3:             var(--sba-ink-3);
+  --fg-muted:         var(--sba-ink-4);
+  --border:           var(--sba-rule);
+  --border-strong:    var(--sba-rule-strong);
+  --brand:            var(--sba-copper);
+  --brand-hover:      var(--sba-copper-deep);
+  --brand-on:         #FFFFFF;
+  --brand-soft:       var(--sba-copper-wash);
+  --link:             var(--sba-copper-darker);
+
+  /* ── TYPE — Families ───────────────────────────────────────── */
+  --font-serif:  "Source Serif 4", "Tiempos Headline", "Iowan Old Style", Georgia, serif;
+  --font-sans:   "Geist", "Söhne", "Helvetica Neue", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono:   "Geist Mono", "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* ── TYPE — Base scale (modular ~1.18) ─────────────────────── */
+  --fs-12:  12px;
+  --fs-13:  13px;
+  --fs-14:  14px;
+  --fs-15:  15px;
+  --fs-16:  16px;
+  --fs-18:  18px;
+  --fs-20:  20px;
+  --fs-24:  24px;
+  --fs-28:  28px;
+  --fs-32:  32px;
+  --fs-40:  40px;
+  --fs-48:  48px;
+  --fs-56:  56px;
+  --fs-72:  72px;
+  --fs-88:  88px;
+
+  --lh-tight: 1.05;
+  --lh-snug:  1.2;
+  --lh-base:  1.5;
+  --lh-loose: 1.7;
+
+  --tracking-tight:   -0.022em;
+  --tracking-snug:    -0.012em;
+  --tracking-normal:  0;
+  --tracking-wide:    0.04em;
+  --tracking-allcaps: 0.14em;
+
+  /* ── SPACING (4-step) ─────────────────────────────────────── */
+  --sp-1:  4px;
+  --sp-2:  8px;
+  --sp-3:  12px;
+  --sp-4:  16px;
+  --sp-5:  20px;
+  --sp-6:  24px;
+  --sp-8:  32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+  --sp-20: 80px;
+  --sp-24: 96px;
+  --sp-32: 128px;
+
+  /* ── RADII ─────────────────────────────────────────────────── */
+  --r-xs:   4px;
+  --r-sm:   8px;
+  --r-md:   12px;
+  --r-lg:   18px;
+  --r-xl:   24px;
+  --r-2xl:  32px;
+  --r-pill: 999px;
+
+  /* ── SHADOWS — soft, warm, low contrast ────────────────────── */
+  --shadow-1: 0 1px 2px rgba(31, 30, 29, 0.04), 0 1px 1px rgba(31, 30, 29, 0.03);
+  --shadow-2: 0 4px 12px rgba(31, 30, 29, 0.06), 0 1px 2px rgba(31, 30, 29, 0.04);
+  --shadow-3: 0 12px 32px rgba(31, 30, 29, 0.08), 0 2px 6px rgba(31, 30, 29, 0.04);
+  --shadow-4: 0 24px 60px rgba(31, 30, 29, 0.12), 0 6px 14px rgba(31, 30, 29, 0.06);
+  --shadow-inset: inset 0 0 0 1px rgba(31, 30, 29, 0.06);
+
+  /* ── MOTION ────────────────────────────────────────────────── */
+  --ease-out:    cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.5, 0, 0.2, 1);
+  --ease-soft:   cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-fast:    140ms;
+  --dur-base:    220ms;
+  --dur-slow:    420ms;
+
+  /* ── LAYOUT ────────────────────────────────────────────────── */
+  --content-narrow: 720px;
+  --content:        960px;
+  --content-wide:   1180px;
+  --gutter:         clamp(20px, 4vw, 48px);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SEMANTIC TYPE — apply by class or selector
+   ───────────────────────────────────────────────────────────── */
+
+/* Display — for hero/eyebrow moments only */
+.sba-display {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(56px, 8vw, var(--fs-88));
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-tight);
+  color: var(--fg);
+}
+
+.sba-h1, h1 {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: clamp(40px, 5vw, var(--fs-56));
+  line-height: 1.08;
+  letter-spacing: var(--tracking-tight);
+  color: var(--fg);
+  margin: 0;
+}
+
+.sba-h2, h2 {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: clamp(32px, 4vw, var(--fs-40));
+  line-height: 1.15;
+  letter-spacing: var(--tracking-snug);
+  color: var(--fg);
+  margin: 0;
+}
+
+.sba-h3, h3 {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: var(--fs-24);
+  line-height: 1.3;
+  letter-spacing: var(--tracking-snug);
+  color: var(--fg);
+  margin: 0;
+}
+
+.sba-h4, h4 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--fs-18);
+  line-height: 1.35;
+  letter-spacing: var(--tracking-normal);
+  color: var(--fg);
+  margin: 0;
+}
+
+.sba-eyebrow {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: var(--fs-12);
+  letter-spacing: var(--tracking-allcaps);
+  text-transform: uppercase;
+  color: var(--brand);
+}
+
+.sba-lead, .sba-lede {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: var(--fs-20);
+  line-height: 1.55;
+  color: var(--fg-2);
+}
+
+.sba-body, p {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: var(--fs-16);
+  line-height: var(--lh-base);
+  color: var(--fg-2);
+  margin: 0;
+}
+
+.sba-small {
+  font-family: var(--font-sans);
+  font-size: var(--fs-14);
+  line-height: 1.5;
+  color: var(--fg-3);
+}
+
+.sba-caption {
+  font-family: var(--font-sans);
+  font-size: var(--fs-12);
+  line-height: 1.4;
+  color: var(--fg-3);
+  letter-spacing: 0.01em;
+}
+
+.sba-mono, code, kbd, samp, pre {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  letter-spacing: -0.01em;
+}
+
+a, .sba-link {
+  color: var(--link);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in oklab, var(--link) 35%, transparent);
+  transition: text-decoration-color var(--dur-fast) var(--ease-out);
+}
+a:hover, .sba-link:hover { text-decoration-color: currentColor; }
+
+/* Base reset for design-system surfaces */
+.sba-root {
+  font-family: var(--font-sans);
+  color: var(--fg);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
